@@ -14,7 +14,6 @@ const stack = new cdk.Stack(app, 'AgentBrokerInteg', {
 new AgentBroker(stack, 'Broker', {
   cpu: 2048,
   memoryLimitMiB: 4096,
-  ebsSizeGiB: 10,
   enableFargateSpot: false,
   configPath: process.env.CONFIG_PATH ?? './config.toml',
 });

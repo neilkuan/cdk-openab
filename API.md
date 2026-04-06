@@ -122,6 +122,7 @@ Any object.
 | --- | --- | --- |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.node">node</a></code> | <code>constructs.Node</code> | The tree node. |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.cluster">cluster</a></code> | <code>aws-cdk-lib.aws_ecs.Cluster</code> | *No description.* |
+| <code><a href="#cdk-agent-broker.AgentBroker.property.dataBucket">dataBucket</a></code> | <code>aws-cdk-lib.aws_s3.IBucket</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.logGroup">logGroup</a></code> | <code>aws-cdk-lib.aws_logs.ILogGroup</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.service">service</a></code> | <code>aws-cdk-lib.aws_ecs.FargateService</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.vpc">vpc</a></code> | <code>aws-cdk-lib.aws_ec2.IVpc</code> | *No description.* |
@@ -147,6 +148,16 @@ public readonly cluster: Cluster;
 ```
 
 - *Type:* aws-cdk-lib.aws_ecs.Cluster
+
+---
+
+##### `dataBucket`<sup>Required</sup> <a name="dataBucket" id="cdk-agent-broker.AgentBroker.property.dataBucket"></a>
+
+```typescript
+public readonly dataBucket: IBucket;
+```
+
+- *Type:* aws-cdk-lib.aws_s3.IBucket
 
 ---
 
@@ -200,8 +211,9 @@ const agentBrokerProps: AgentBrokerProps = { ... }
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.configPath">configPath</a></code> | <code>string</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.assignPublicIp">assignPublicIp</a></code> | <code>boolean</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.cpu">cpu</a></code> | <code>number</code> | *No description.* |
-| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.ebsMountPath">ebsMountPath</a></code> | <code>string</code> | *No description.* |
-| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.ebsSizeGiB">ebsSizeGiB</a></code> | <code>number</code> | *No description.* |
+| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.dataBucket">dataBucket</a></code> | <code>aws-cdk-lib.aws_s3.IBucket</code> | *No description.* |
+| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.dataLocalPath">dataLocalPath</a></code> | <code>string</code> | *No description.* |
+| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.dataS3Prefix">dataS3Prefix</a></code> | <code>string</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.enableFargateSpot">enableFargateSpot</a></code> | <code>boolean</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.image">image</a></code> | <code>aws-cdk-lib.aws_ecs.ContainerImage</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.logGroup">logGroup</a></code> | <code>aws-cdk-lib.aws_logs.ILogGroup</code> | *No description.* |
@@ -241,23 +253,33 @@ public readonly cpu: number;
 
 ---
 
-##### `ebsMountPath`<sup>Optional</sup> <a name="ebsMountPath" id="cdk-agent-broker.AgentBrokerProps.property.ebsMountPath"></a>
+##### `dataBucket`<sup>Optional</sup> <a name="dataBucket" id="cdk-agent-broker.AgentBrokerProps.property.dataBucket"></a>
 
 ```typescript
-public readonly ebsMountPath: string;
+public readonly dataBucket: IBucket;
+```
+
+- *Type:* aws-cdk-lib.aws_s3.IBucket
+
+---
+
+##### `dataLocalPath`<sup>Optional</sup> <a name="dataLocalPath" id="cdk-agent-broker.AgentBrokerProps.property.dataLocalPath"></a>
+
+```typescript
+public readonly dataLocalPath: string;
 ```
 
 - *Type:* string
 
 ---
 
-##### `ebsSizeGiB`<sup>Optional</sup> <a name="ebsSizeGiB" id="cdk-agent-broker.AgentBrokerProps.property.ebsSizeGiB"></a>
+##### `dataS3Prefix`<sup>Optional</sup> <a name="dataS3Prefix" id="cdk-agent-broker.AgentBrokerProps.property.dataS3Prefix"></a>
 
 ```typescript
-public readonly ebsSizeGiB: number;
+public readonly dataS3Prefix: string;
 ```
 
-- *Type:* number
+- *Type:* string
 
 ---
 

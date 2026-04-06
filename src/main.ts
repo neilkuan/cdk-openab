@@ -1,7 +1,7 @@
-import { Size } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3assets from 'aws-cdk-lib/aws-s3-assets';
 import { Construct } from 'constructs';
 
@@ -13,8 +13,9 @@ export interface AgentBrokerProps {
   readonly cpu?: number;
   readonly assignPublicIp?: boolean;
   readonly enableFargateSpot?: boolean;
-  readonly ebsSizeGiB?: number;
-  readonly ebsMountPath?: string;
+  readonly dataBucket?: s3.IBucket;
+  readonly dataS3Prefix?: string;
+  readonly dataLocalPath?: string;
   readonly configPath: string;
   readonly logGroup?: logs.ILogGroup;
 }
@@ -24,6 +25,7 @@ export class AgentBroker extends Construct {
   public readonly cluster: ecs.Cluster;
   public readonly service: ecs.FargateService;
   public readonly logGroup: logs.ILogGroup;
+  public readonly dataBucket: s3.IBucket;
 
   constructor(scope: Construct, id: string, props: AgentBrokerProps) {
     super(scope, id);
@@ -58,56 +60,55 @@ export class AgentBroker extends Construct {
     });
     const logGroup = this.logGroup;
 
-    const container = taskDefinition.addContainer('app', {
-      image: props.image ?? ecs.ContainerImage.fromRegistry('ghcr.io/thepagent/agent-broker:dd7e1ca'),
-      portMappings: [{ containerPort: 80 }],
-      essential: true,
-      logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'app' }),
+    const dataLocalPath = props.dataLocalPath ?? '/home/agent';
+    const dataS3Prefix = props.dataS3Prefix ?? 'agent-data';
+
+    // S3 bucket for persistent data
+    this.dataBucket = props.dataBucket ?? new s3.Bucket(this, 'DataBucket', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
     });
 
-    // EBS volume for /home/agent
-    const volume = new ecs.ServiceManagedVolume(this, 'EbsVolume', {
-      name: 'agent-data',
-      managedEBSVolume: {
-        size: Size.gibibytes(props.ebsSizeGiB ?? 10),
-        volumeType: ec2.EbsDeviceVolumeType.GP3,
-      },
-    });
+    // Shared volumes
+    taskDefinition.addVolume({ name: 'agent-data' });
+    taskDefinition.addVolume({ name: 'agent-config' });
 
-    volume.mountIn(container, {
-      containerPath: props.ebsMountPath ?? '/home/agent',
-      readOnly: false,
-    });
-
-    taskDefinition.addVolume(volume);
-
-    // Config volume: download config.toml from S3 via init container
+    // Config asset
     const configAsset = new s3assets.Asset(this, 'ConfigAsset', {
       path: props.configPath,
     });
 
-    taskDefinition.addVolume({
-      name: 'agent-config',
-    });
-
-    const initContainer = taskDefinition.addContainer('config-init', {
+    // Init container: restore data from S3 + download config
+    const initContainer = taskDefinition.addContainer('data-init', {
       image: ecs.ContainerImage.fromRegistry('amazon/aws-cli:latest'),
       essential: false,
-      logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'config-init' }),
+      logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'data-init' }),
       environment: {
+        DATA_BUCKET: this.dataBucket.bucketName,
+        DATA_S3_PREFIX: dataS3Prefix,
+        DATA_LOCAL_PATH: dataLocalPath,
         CONFIG_S3_BUCKET: configAsset.s3BucketName,
         CONFIG_S3_KEY: configAsset.s3ObjectKey,
       },
-      entryPoint: ['sh', '-c'],
+      entryPoint: ['bash', '-c'],
       command: [
-        'aws s3 cp s3://$CONFIG_S3_BUCKET/$CONFIG_S3_KEY /etc/agent-broker/config.toml',
+        [
+          'mkdir -p $DATA_LOCAL_PATH',
+          'aws s3 sync s3://$DATA_BUCKET/$DATA_S3_PREFIX $DATA_LOCAL_PATH || true',
+          'aws s3 cp s3://$CONFIG_S3_BUCKET/$CONFIG_S3_KEY /etc/agent-broker/config.toml',
+        ].join(' && '),
       ],
     });
 
-    initContainer.addMountPoints({
-      sourceVolume: 'agent-config',
-      containerPath: '/etc/agent-broker',
-      readOnly: false,
+    initContainer.addMountPoints(
+      { sourceVolume: 'agent-data', containerPath: dataLocalPath, readOnly: false },
+      { sourceVolume: 'agent-config', containerPath: '/etc/agent-broker', readOnly: false },
+    );
+
+    // App container
+    const container = taskDefinition.addContainer('app', {
+      image: props.image ?? ecs.ContainerImage.fromRegistry('ghcr.io/thepagent/agent-broker:dd7e1ca'),
+      essential: true,
+      logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'app' }),
     });
 
     container.addContainerDependencies({
@@ -115,12 +116,42 @@ export class AgentBroker extends Construct {
       condition: ecs.ContainerDependencyCondition.SUCCESS,
     });
 
-    container.addMountPoints({
-      sourceVolume: 'agent-config',
-      containerPath: '/etc/agent-broker',
-      readOnly: true,
+    container.addMountPoints(
+      { sourceVolume: 'agent-data', containerPath: dataLocalPath, readOnly: false },
+      { sourceVolume: 'agent-config', containerPath: '/etc/agent-broker', readOnly: true },
+    );
+
+    // Sidecar: periodic backup (every hour) + final backup on SIGTERM
+    const backupSidecar = taskDefinition.addContainer('data-backup', {
+      image: ecs.ContainerImage.fromRegistry('amazon/aws-cli:latest'),
+      essential: false,
+      logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'data-backup' }),
+      environment: {
+        DATA_BUCKET: this.dataBucket.bucketName,
+        DATA_S3_PREFIX: dataS3Prefix,
+        DATA_LOCAL_PATH: dataLocalPath,
+      },
+      entryPoint: ['bash', '-c'],
+      command: [
+        [
+          'do_backup() { echo "[$(date)] Syncing $DATA_LOCAL_PATH to s3://$DATA_BUCKET/$DATA_S3_PREFIX ..."; aws s3 sync $DATA_LOCAL_PATH s3://$DATA_BUCKET/$DATA_S3_PREFIX --delete; echo "[$(date)] Backup done"; }',
+          'trap \'do_backup; exit 0\' SIGTERM',
+          'while true; do do_backup; sleep 600 & wait $!; done',
+        ].join('; '),
+      ],
     });
 
+    backupSidecar.addContainerDependencies({
+      container: initContainer,
+      condition: ecs.ContainerDependencyCondition.SUCCESS,
+    });
+
+    backupSidecar.addMountPoints(
+      { sourceVolume: 'agent-data', containerPath: dataLocalPath, readOnly: true },
+    );
+
+    // Grant S3 permissions
+    this.dataBucket.grantReadWrite(taskDefinition.taskRole);
     configAsset.grantRead(taskDefinition.taskRole);
 
     this.service = new ecs.FargateService(this, 'Service', {
@@ -142,6 +173,5 @@ export class AgentBroker extends Construct {
         : undefined,
     });
 
-    this.service.addVolume(volume);
   }
 }

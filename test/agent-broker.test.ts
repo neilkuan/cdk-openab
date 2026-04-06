@@ -48,7 +48,7 @@ test('assignPublicIp creates only public subnets', () => {
   }, 1);
 });
 
-test('configPath adds init container and config volume', () => {
+test('configPath adds init container, backup sidecar, and S3 bucket', () => {
   const app = new App();
   const stack = new Stack(app, 'TestStack');
 
@@ -57,13 +57,25 @@ test('configPath adds init container and config volume', () => {
   const template = Template.fromStack(stack);
   template.hasResourceProperties('AWS::ECS::TaskDefinition', {
     ContainerDefinitions: Match.arrayWith([
+      Match.objectLike({ Name: 'data-init', Essential: false }),
+    ]),
+  });
+  template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+    ContainerDefinitions: Match.arrayWith([
+      Match.objectLike({ Name: 'data-backup', Essential: false }),
+    ]),
+  });
+  template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+    ContainerDefinitions: Match.arrayWith([
       Match.objectLike({
         Name: 'app',
+        Essential: true,
         MountPoints: Match.arrayWith([
+          Match.objectLike({ ContainerPath: '/home/agent' }),
           Match.objectLike({ ContainerPath: '/etc/agent-broker' }),
         ]),
       }),
-      Match.objectLike({ Name: 'config-init', Essential: false }),
     ]),
   });
+  template.resourceCountIs('AWS::S3::Bucket', 1);
 });
