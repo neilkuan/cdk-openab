@@ -1,18 +1,42 @@
-import { awscdk, javascript } from "projen";
+import { awscdk, javascript } from 'projen';
 const project = new awscdk.AwsCdkConstructLibrary({
-  author: "Neil Kuan",
-  authorAddress: "guan840912@gmail.com",
-  cdkVersion: "2.170.0",
-  defaultReleaseBranch: "main",
-  jsiiVersion: "~5.9.0",
-  name: "cdk-agent-broker",
+  author: 'Neil Kuan',
+  authorAddress: 'guan840912@gmail.com',
+  cdkVersion: '2.170.0',
+  name: 'cdk-agent-broker',
   packageManager: javascript.NodePackageManager.NPM,
   projenrcTs: true,
-  repositoryUrl: "https://github.com/neilkuan/cdk-agent-broker.git",
+  repositoryUrl: 'https://github.com/neilkuan/cdk-agent-broker.git',
+  description: 'AWS CDK constructs library for Agent Broker',
 
-  // deps: [],                /* Runtime dependencies of this module. */
-  // description: undefined,  /* The description is just a string that helps people understand the purpose of the package. */
-  // devDeps: [],             /* Build dependencies for this module. */
-  // packageName: undefined,  /* The "name" in package.json. */
+  stability: 'experimental',
+  defaultReleaseBranch: 'main',
+  autoDetectBin: false,
+  depsUpgradeOptions: {
+    workflowOptions: {
+      labels: ['auto-approve', 'auto-merge'],
+    },
+  },
+  autoApproveOptions: {
+    secret: 'GITHUB_TOKEN',
+    allowedUsernames: ['neilkuan'],
+  },
+
+  npmProvenance: true,
+  npmTokenSecret: '',
+  npmTrustedPublishing: true,
+  devDeps: [
+    // 'ts-jest@29.1.2',
+    'jsii-rosetta@5.0.x',
+  ],
+  minNodeVersion: '24.0.0',
+  workflowNodeVersion: '24',
+  typescriptVersion: '^5.5',
+  jsiiVersion: '5.9.x',
+
+  publishToPypi: {
+    distName: 'cdk-agent-broker',
+    module: 'cdk_agent_broker',
+  },
 });
 project.synth();
