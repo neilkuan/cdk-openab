@@ -1,6 +1,7 @@
 import { Size } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3assets from 'aws-cdk-lib/aws-s3-assets';
 import { Construct } from 'constructs';
 
@@ -44,12 +45,21 @@ export class AgentBroker extends Construct {
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef', {
       memoryLimitMiB: props.memoryLimitMiB ?? 4096,
       cpu: props.cpu ?? 2048,
+      runtimePlatform: {
+        cpuArchitecture: ecs.CpuArchitecture.ARM64,
+        operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+      },
+    });
+
+    const logGroup = new logs.LogGroup(this, 'LogGroup', {
+      retention: logs.RetentionDays.ONE_WEEK,
     });
 
     const container = taskDefinition.addContainer('app', {
       image: props.image ?? ecs.ContainerImage.fromRegistry('ghcr.io/thepagent/agent-broker:dd7e1ca'),
       portMappings: [{ containerPort: 80 }],
       essential: true,
+      logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'app' }),
     });
 
     // EBS volume for /home/agent

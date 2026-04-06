@@ -33,7 +33,20 @@ const project = new awscdk.AwsCdkConstructLibrary({
   workflowNodeVersion: '24',
   typescriptVersion: '^5.5',
   jsiiVersion: '5.9.x',
-
+  gitignore: [
+    'config.toml',
+    'cdk.out',
+    'cdk.context.json',
+    'cdk.json',
+  ],
+  npmignore: [
+    'config.toml',
+    'cdk.out',
+    'cdk.context.json',
+    'cdk.json',
+    'integ-index.ts',
+  ],
+  excludeTypescript: ['integ-index.ts'],
   publishToPypi: {
     distName: 'cdk-agent-broker',
     module: 'cdk_agent_broker',
