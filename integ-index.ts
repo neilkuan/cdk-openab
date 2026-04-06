@@ -5,6 +5,7 @@ const app = new cdk.App();
 
 const stack = new cdk.Stack(app, 'AgentBrokerInteg', {
   env: {
+    // Taipei
     region: 'ap-east-2',
     account: process.env.CDK_DEFAULT_ACCOUNT,
   },
