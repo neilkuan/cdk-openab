@@ -7,6 +7,7 @@ export interface AgentBrokerProps {
   readonly image?: ecs.ContainerImage;
   readonly memoryLimitMiB?: number;
   readonly cpu?: number;
+  readonly assignPublicIp?: boolean;
 }
 
 export class AgentBroker extends Construct {
@@ -36,6 +37,10 @@ export class AgentBroker extends Construct {
       desiredCount: 1,
       maxHealthyPercent: 100,
       minHealthyPercent: 0,
+      assignPublicIp: props.assignPublicIp ?? false,
+      vpcSubnets: props.assignPublicIp
+        ? { subnetType: ec2.SubnetType.PUBLIC }
+        : undefined,
     });
   }
 }
