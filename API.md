@@ -9,7 +9,7 @@
 ```typescript
 import { AgentBroker } from 'cdk-agent-broker'
 
-new AgentBroker(scope: Construct, id: string, props?: AgentBrokerProps)
+new AgentBroker(scope: Construct, id: string, props: AgentBrokerProps)
 ```
 
 | **Name** | **Type** | **Description** |
@@ -32,7 +32,7 @@ new AgentBroker(scope: Construct, id: string, props?: AgentBrokerProps)
 
 ---
 
-##### `props`<sup>Optional</sup> <a name="props" id="cdk-agent-broker.AgentBroker.Initializer.parameter.props"></a>
+##### `props`<sup>Required</sup> <a name="props" id="cdk-agent-broker.AgentBroker.Initializer.parameter.props"></a>
 
 - *Type:* <a href="#cdk-agent-broker.AgentBrokerProps">AgentBrokerProps</a>
 
@@ -197,8 +197,8 @@ const agentBrokerProps: AgentBrokerProps = { ... }
 
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
-| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.assignPublicIp">assignPublicIp</a></code> | <code>boolean</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.configPath">configPath</a></code> | <code>string</code> | *No description.* |
+| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.assignPublicIp">assignPublicIp</a></code> | <code>boolean</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.cpu">cpu</a></code> | <code>number</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.ebsMountPath">ebsMountPath</a></code> | <code>string</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.ebsSizeGiB">ebsSizeGiB</a></code> | <code>number</code> | *No description.* |
@@ -211,6 +211,16 @@ const agentBrokerProps: AgentBrokerProps = { ... }
 
 ---
 
+##### `configPath`<sup>Required</sup> <a name="configPath" id="cdk-agent-broker.AgentBrokerProps.property.configPath"></a>
+
+```typescript
+public readonly configPath: string;
+```
+
+- *Type:* string
+
+---
+
 ##### `assignPublicIp`<sup>Optional</sup> <a name="assignPublicIp" id="cdk-agent-broker.AgentBrokerProps.property.assignPublicIp"></a>
 
 ```typescript
@@ -218,16 +228,6 @@ public readonly assignPublicIp: boolean;
 ```
 
 - *Type:* boolean
-
----
-
-##### `configPath`<sup>Optional</sup> <a name="configPath" id="cdk-agent-broker.AgentBrokerProps.property.configPath"></a>
-
-```typescript
-public readonly configPath: string;
-```
-
-- *Type:* string
 
 ---
 
