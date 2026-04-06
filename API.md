@@ -122,6 +122,7 @@ Any object.
 | --- | --- | --- |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.node">node</a></code> | <code>constructs.Node</code> | The tree node. |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.cluster">cluster</a></code> | <code>aws-cdk-lib.aws_ecs.Cluster</code> | *No description.* |
+| <code><a href="#cdk-agent-broker.AgentBroker.property.logGroup">logGroup</a></code> | <code>aws-cdk-lib.aws_logs.ILogGroup</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.service">service</a></code> | <code>aws-cdk-lib.aws_ecs.FargateService</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBroker.property.vpc">vpc</a></code> | <code>aws-cdk-lib.aws_ec2.IVpc</code> | *No description.* |
 
@@ -146,6 +147,16 @@ public readonly cluster: Cluster;
 ```
 
 - *Type:* aws-cdk-lib.aws_ecs.Cluster
+
+---
+
+##### `logGroup`<sup>Required</sup> <a name="logGroup" id="cdk-agent-broker.AgentBroker.property.logGroup"></a>
+
+```typescript
+public readonly logGroup: ILogGroup;
+```
+
+- *Type:* aws-cdk-lib.aws_logs.ILogGroup
 
 ---
 
@@ -193,6 +204,7 @@ const agentBrokerProps: AgentBrokerProps = { ... }
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.ebsSizeGiB">ebsSizeGiB</a></code> | <code>number</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.enableFargateSpot">enableFargateSpot</a></code> | <code>boolean</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.image">image</a></code> | <code>aws-cdk-lib.aws_ecs.ContainerImage</code> | *No description.* |
+| <code><a href="#cdk-agent-broker.AgentBrokerProps.property.logGroup">logGroup</a></code> | <code>aws-cdk-lib.aws_logs.ILogGroup</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.memoryLimitMiB">memoryLimitMiB</a></code> | <code>number</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.vpc">vpc</a></code> | <code>aws-cdk-lib.aws_ec2.IVpc</code> | *No description.* |
 | <code><a href="#cdk-agent-broker.AgentBrokerProps.property.vpcCidr">vpcCidr</a></code> | <code>string</code> | *No description.* |
@@ -266,6 +278,16 @@ public readonly image: ContainerImage;
 ```
 
 - *Type:* aws-cdk-lib.aws_ecs.ContainerImage
+
+---
+
+##### `logGroup`<sup>Optional</sup> <a name="logGroup" id="cdk-agent-broker.AgentBrokerProps.property.logGroup"></a>
+
+```typescript
+public readonly logGroup: ILogGroup;
+```
+
+- *Type:* aws-cdk-lib.aws_logs.ILogGroup
 
 ---
 

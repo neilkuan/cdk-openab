@@ -4,6 +4,7 @@ cdk.out
 cdk.context.json
 cdk.json
 integ-index.ts
+.DS_Store
 /.projen/
 /test-reports/
 junit.xml

@@ -15,15 +15,17 @@ export interface AgentBrokerProps {
   readonly enableFargateSpot?: boolean;
   readonly ebsSizeGiB?: number;
   readonly ebsMountPath?: string;
-  readonly configPath?: string;
+  readonly configPath: string;
+  readonly logGroup?: logs.ILogGroup;
 }
 
 export class AgentBroker extends Construct {
   public readonly vpc: ec2.IVpc;
   public readonly cluster: ecs.Cluster;
   public readonly service: ecs.FargateService;
+  public readonly logGroup: logs.ILogGroup;
 
-  constructor(scope: Construct, id: string, props: AgentBrokerProps = {}) {
+  constructor(scope: Construct, id: string, props: AgentBrokerProps) {
     super(scope, id);
 
     const useSpot = props.enableFargateSpot ?? true;
@@ -51,9 +53,10 @@ export class AgentBroker extends Construct {
       },
     });
 
-    const logGroup = new logs.LogGroup(this, 'LogGroup', {
+    this.logGroup = props.logGroup ?? new logs.LogGroup(this, 'LogGroup', {
       retention: logs.RetentionDays.ONE_WEEK,
     });
+    const logGroup = this.logGroup;
 
     const container = taskDefinition.addContainer('app', {
       image: props.image ?? ecs.ContainerImage.fromRegistry('ghcr.io/thepagent/agent-broker:dd7e1ca'),
@@ -79,47 +82,46 @@ export class AgentBroker extends Construct {
     taskDefinition.addVolume(volume);
 
     // Config volume: download config.toml from S3 via init container
-    if (props.configPath) {
-      const configAsset = new s3assets.Asset(this, 'ConfigAsset', {
-        path: props.configPath,
-      });
+    const configAsset = new s3assets.Asset(this, 'ConfigAsset', {
+      path: props.configPath,
+    });
 
-      taskDefinition.addVolume({
-        name: 'agent-config',
-      });
+    taskDefinition.addVolume({
+      name: 'agent-config',
+    });
 
-      const initContainer = taskDefinition.addContainer('config-init', {
-        image: ecs.ContainerImage.fromRegistry('amazon/aws-cli:latest'),
-        essential: false,
-        environment: {
-          CONFIG_S3_BUCKET: configAsset.s3BucketName,
-          CONFIG_S3_KEY: configAsset.s3ObjectKey,
-        },
-        command: [
-          'sh', '-c',
-          'aws s3 cp s3://$CONFIG_S3_BUCKET/$CONFIG_S3_KEY /etc/agent-broker/config.toml',
-        ],
-      });
+    const initContainer = taskDefinition.addContainer('config-init', {
+      image: ecs.ContainerImage.fromRegistry('amazon/aws-cli:latest'),
+      essential: false,
+      logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'config-init' }),
+      environment: {
+        CONFIG_S3_BUCKET: configAsset.s3BucketName,
+        CONFIG_S3_KEY: configAsset.s3ObjectKey,
+      },
+      entryPoint: ['sh', '-c'],
+      command: [
+        'aws s3 cp s3://$CONFIG_S3_BUCKET/$CONFIG_S3_KEY /etc/agent-broker/config.toml',
+      ],
+    });
 
-      initContainer.addMountPoints({
-        sourceVolume: 'agent-config',
-        containerPath: '/etc/agent-broker',
-        readOnly: false,
-      });
+    initContainer.addMountPoints({
+      sourceVolume: 'agent-config',
+      containerPath: '/etc/agent-broker',
+      readOnly: false,
+    });
 
-      container.addContainerDependencies({
-        container: initContainer,
-        condition: ecs.ContainerDependencyCondition.SUCCESS,
-      });
+    container.addContainerDependencies({
+      container: initContainer,
+      condition: ecs.ContainerDependencyCondition.SUCCESS,
+    });
 
-      container.addMountPoints({
-        sourceVolume: 'agent-config',
-        containerPath: '/etc/agent-broker',
-        readOnly: true,
-      });
+    container.addMountPoints({
+      sourceVolume: 'agent-config',
+      containerPath: '/etc/agent-broker',
+      readOnly: true,
+    });
 
-      configAsset.grantRead(taskDefinition.taskRole);
-    }
+    configAsset.grantRead(taskDefinition.taskRole);
 
     this.service = new ecs.FargateService(this, 'Service', {
       cluster: this.cluster,
@@ -128,11 +130,15 @@ export class AgentBroker extends Construct {
       maxHealthyPercent: 100,
       minHealthyPercent: 0,
       assignPublicIp,
+      enableExecuteCommand: true,
       vpcSubnets: assignPublicIp
         ? { subnetType: ec2.SubnetType.PUBLIC }
         : undefined,
       capacityProviderStrategies: useSpot
-        ? [{ capacityProvider: 'FARGATE_SPOT', weight: 1 }]
+        ? [
+          { capacityProvider: 'FARGATE_SPOT', weight: 2, base: 0 },
+          { capacityProvider: 'FARGATE', weight: 1, base: 1 },
+        ]
         : undefined,
     });
 

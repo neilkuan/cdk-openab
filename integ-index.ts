@@ -14,7 +14,8 @@ new AgentBroker(stack, 'Broker', {
   cpu: 2048,
   memoryLimitMiB: 4096,
   ebsSizeGiB: 10,
-  configPath: './config.toml',
+  enableFargateSpot: false,
+  configPath: process.env.CONFIG_PATH ?? './config.toml',
 });
 
 app.synth();

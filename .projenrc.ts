@@ -45,6 +45,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     'cdk.context.json',
     'cdk.json',
     'integ-index.ts',
+    '.DS_Store',
   ],
   excludeTypescript: ['integ-index.ts'],
   publishToPypi: {

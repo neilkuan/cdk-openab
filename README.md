@@ -18,17 +18,17 @@ AWS CDK constructs library for deploying [Agent Broker](https://github.com/thepa
 │  │  │  │  ECS Cluster                               │  │  │  │
 │  │  │  │                                            │  │  │  │
 │  │  │  │  ┌──────────────────────────────────────┐  │  │  │  │
-│  │  │  │  │  Fargate Service (FARGATE_SPOT)      │  │  │  │  │
+│  │  │  │  │  Fargate Service (FARGATE_SPOT| FARGATE)│  │  │  │
 │  │  │  │  │                                      │  │  │  │  │
 │  │  │  │  │  ┌──────────┐    ┌────────────────┐  │  │  │  │  │
 │  │  │  │  │  │ config-  │    │  app container │  │  │  │  │  │
 │  │  │  │  │  │ init     │───▶│  (port 80)     │  │  │  │  │  │
-│  │  │  │  │  │(optional)│    │                │  │  │  │  │  │
+│  │  │  │  │  │(required)│    │                │  │  │  │  │  │
 │  │  │  │  │  └──────────┘    └───────┬────────┘  │  │  │  │  │
 │  │  │  │  │                          │           │  │  │  │  │
 │  │  │  │  │  ┌───────────────────────┴────────┐  │  │  │  │  │
 │  │  │  │  │  │  EBS Volume (GP3, 10 GiB)      │  │  │  │  │  │
-│  │  │  │  │  │  mount: /home/agent             │  │  │  │  │  │
+│  │  │  │  │  │  mount: /home/agent            │  │  │  │  │  │
 │  │  │  │  │  └────────────────────────────────┘  │  │  │  │  │
 │  │  │  │  └──────────────────────────────────────┘  │  │  │  │
 │  │  │  └────────────────────────────────────────────┘  │  │  │
@@ -36,7 +36,7 @@ AWS CDK constructs library for deploying [Agent Broker](https://github.com/thepa
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
 │  ┌──────────────┐                                            │
-│  │  S3 (config  │  ◀── config.toml (optional)                │
+│  │  S3 (config  │  ◀── config.toml (required)                │
 │  │  asset)      │                                            │
 │  └──────────────┘                                            │
 └──────────────────────────────────────────────────────────────┘
@@ -57,15 +57,16 @@ pip install cdk-agent-broker
 ```ts
 import { AgentBroker } from 'cdk-agent-broker';
 
-// Minimal — all defaults
-new AgentBroker(this, 'Broker');
+new AgentBroker(this, 'Broker', {
+  configPath: './config.toml',  // required: path to your local config.toml
+});
 
-// With custom config
+// With custom settings
 new AgentBroker(this, 'Broker', {
   cpu: 2048,
   memoryLimitMiB: 4096,
   ebsSizeGiB: 20,
-  configPath: './config.toml', // local path, uploaded to S3 automatically
+  configPath: './config.toml',
 });
 ```
 
@@ -82,7 +83,7 @@ new AgentBroker(this, 'Broker', {
 | `enableFargateSpot` | `boolean` | `true` | 啟用 FARGATE_SPOT |
 | `ebsSizeGiB` | `number` | `10` | EBS volume 大小 (GiB) |
 | `ebsMountPath` | `string` | `/home/agent` | EBS 掛載路徑 |
-| `configPath` | `string` | — | 本地 config.toml 路徑，會透過 S3 init container 掛載到 `/etc/agent-broker/config.toml` |
+| `configPath` | `string` | **必填** | 本地 config.toml 路徑，透過 S3 init container 掛載到 `/etc/agent-broker/config.toml` |
 
 ##### Exposed Resources
 
@@ -93,8 +94,6 @@ new AgentBroker(this, 'Broker', {
 - `broker.service` — Fargate Service
 
 ##### Config Init Container Flow
-
-當提供 `configPath` 時：
 
 1. 本地 config.toml 透過 `s3-assets` 上傳到 S3
 2. `config-init` init container 使用 `aws-cli` 從 S3 下載到 `/etc/agent-broker/config.toml`
