@@ -1,6 +1,6 @@
 # cdk-openab
 
-AWS CDK constructs library for deploying [Agent Broker](https://github.com/openabdev/openab) on AWS ECS Fargate.
+AWS CDK constructs library for deploying [OpenAB aka Agent Broker](https://github.com/openabdev/openab) on AWS ECS Fargate.
 
 ##### Architecture
 
