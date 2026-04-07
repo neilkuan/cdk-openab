@@ -160,8 +160,6 @@ export class OpenAB extends Construct {
       cluster: this.cluster,
       taskDefinition,
       desiredCount: 1,
-      maxHealthyPercent: 100,
-      minHealthyPercent: 0,
       assignPublicIp,
       enableExecuteCommand: true,
       vpcSubnets: assignPublicIp
