@@ -16,7 +16,7 @@ new OpenAB(stack, 'Broker', {
   memoryLimitMiB: 4096,
   enableFargateSpot: false,
   configPath: process.env.CONFIG_PATH ?? './config.toml',
-  image: cdk.aws_ecs.ContainerImage.fromRegistry('ghcr.io/openabdev/openab:9c70cdd'),
+  image: cdk.aws_ecs.ContainerImage.fromRegistry('ghcr.io/openabdev/openab:78f8d2c'),
 });
 
 app.synth();

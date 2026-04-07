@@ -95,6 +95,7 @@ export class OpenAB extends Construct {
           'mkdir -p $DATA_LOCAL_PATH',
           'aws s3 sync s3://$DATA_BUCKET/$DATA_S3_PREFIX $DATA_LOCAL_PATH || true',
           'aws s3 cp s3://$CONFIG_S3_BUCKET/$CONFIG_S3_KEY /etc/openab/config.toml',
+          'chown -R 1000:1000 $DATA_LOCAL_PATH /etc/openab',
         ].join(' && '),
       ],
     });
@@ -106,8 +107,9 @@ export class OpenAB extends Construct {
 
     // App container
     const container = taskDefinition.addContainer('app', {
-      image: props.image ?? ecs.ContainerImage.fromRegistry('ghcr.io/openabdev/openab:9c70cdd'),
+      image: props.image ?? ecs.ContainerImage.fromRegistry('ghcr.io/openabdev/openab:78f8d2c'),
       essential: true,
+      user: '1000:1000',
       logging: ecs.LogDrivers.awsLogs({ logGroup, streamPrefix: 'app' }),
     });
 
